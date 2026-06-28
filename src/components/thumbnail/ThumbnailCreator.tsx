@@ -167,6 +167,8 @@ export function ThumbnailCreator() {
 
   async function handleDownload() {
     if (!title.trim()) return;
+    const slug = title.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 60);
+    const filename = `${slug}.png`;
     if (mode === "template") {
       setSaving(true);
       try {
@@ -180,12 +182,12 @@ export function ThumbnailCreator() {
       if (!previewRef.current) return;
       const dataUrl = await toPng(previewRef.current, { quality: 1, pixelRatio: 2 });
       const link = document.createElement("a");
-      link.download = `thumbnail-${Date.now()}.png`;
+      link.download = filename;
       link.href = dataUrl;
       link.click();
     } else {
       const link = document.createElement("a");
-      link.download = `thumbnail-${Date.now()}.png`;
+      link.download = filename;
       link.href = imageUrl; link.target = "_blank"; link.click();
     }
   }
