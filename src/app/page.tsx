@@ -3,6 +3,7 @@ import {
   Sparkles, Zap, ImageIcon, Settings2, ArrowRight,
   Check, Star, Layers, Upload,
 } from "lucide-react";
+import { LogoIcon } from "@/components/ui/logo-icon";
 
 // ── mock thumbnail cards for hero ────────────────────────────
 
@@ -87,7 +88,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <LogoIcon className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="font-bold text-white tracking-tight">thumbai</span>
           </div>

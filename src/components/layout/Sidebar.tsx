@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Plus, Settings, LogOut, Sparkles, User } from "lucide-react";
+import { LayoutDashboard, Plus, Settings, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "@/lib/auth-client";
+import { LogoIcon } from "@/components/ui/logo-icon";
 
 const NAV = [
   { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
@@ -33,7 +34,7 @@ export function Sidebar() {
     <aside className="hidden lg:flex w-56 shrink-0 flex-col h-screen bg-zinc-950 border-r border-zinc-900 py-6 px-3 fixed left-0 top-0">
       <Link href="/dashboard" className="flex items-center gap-2 px-2 mb-8">
         <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
-          <Sparkles className="w-3.5 h-3.5 text-white" />
+          <LogoIcon className="w-3.5 h-3.5 text-white" />
         </div>
         <span className="font-semibold text-white text-base tracking-tight">thumbai</span>
       </Link>

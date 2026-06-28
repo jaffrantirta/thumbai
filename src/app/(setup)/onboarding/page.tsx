@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, ArrowRight, Key, Cpu, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Key, Cpu, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
+import { LogoIcon } from "@/components/ui/logo-icon";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["welcome", "connect", "models", "done"] as const;
@@ -52,7 +53,7 @@ export default function OnboardingPage() {
         {/* logo */}
         <div className="flex items-center gap-2 justify-center mb-10">
           <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
+            <LogoIcon className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-white text-xl tracking-tight">thumbai</span>
         </div>

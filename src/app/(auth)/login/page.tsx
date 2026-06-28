@@ -7,7 +7,8 @@ import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { LogoIcon } from "@/components/ui/logo-icon";
 
 function GoogleIcon() {
   return (
@@ -51,7 +52,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 justify-center mb-8">
           <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
+            <LogoIcon className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-white text-xl tracking-tight">thumbai</span>
         </div>
