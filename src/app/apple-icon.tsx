@@ -17,13 +17,15 @@ export default function AppleIcon() {
           justifyContent: "center",
         }}
       >
-        <svg width="130" height="130" viewBox="0 0 24 24" fill="none">
-          {/* thumbnail frame */}
-          <rect x="1.5" y="5.5" width="16" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+        <svg width="130" height="130" viewBox="0 0 32 32">
+          {/* frame outer (white fill = border) */}
+          <rect x="3" y="9" width="18" height="12" rx="2.5" fill="white"/>
+          {/* frame inner (violet fill = interior) */}
+          <rect x="5" y="11" width="14" height="8" rx="1.5" fill="#5b21b6"/>
           {/* play triangle */}
-          <path d="M7 8.5L12.5 11L7 13.5V8.5Z" fill="white" />
-          {/* 4-pointed sparkle */}
-          <path d="M20 2L20.9 4.1L23 5L20.9 5.9L20 8L19.1 5.9L17 5L19.1 4.1L20 2Z" fill="white" />
+          <path d="M8.5 12.5L15 15L8.5 17.5Z" fill="white"/>
+          {/* sparkle — 4-pointed star */}
+          <path d="M25 4L26.1 5.9L28 7L26.1 8.1L25 10L23.9 8.1L22 7L23.9 5.9Z" fill="white"/>
         </svg>
       </div>
     ),

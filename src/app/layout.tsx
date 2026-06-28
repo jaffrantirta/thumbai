@@ -4,6 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "thumbai — ai thumbnail generator",
   description: "generate ai-powered thumbnails for your videos",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/apple-icon",
+  },
 };
 
 export const viewport: Viewport = {
