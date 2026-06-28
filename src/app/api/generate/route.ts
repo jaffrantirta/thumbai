@@ -7,29 +7,45 @@ import OpenAI from "openai";
 import { headers } from "next/headers";
 
 function extractJson(text: string): { caption?: string; subtext?: string } {
-  try {
-    return JSON.parse(text);
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { return JSON.parse(match[0]); } catch { /* ignore */ }
-    }
-  }
+  try { return JSON.parse(text); } catch { /* fall through */ }
+  const match = text.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]); } catch { /* ignore */ } }
   return {};
 }
 
-function normaliseEndpoint(url: string): string {
+function normaliseEndpoint(url: string) {
   return url.replace(/\/+$/, "");
+}
+
+async function describeFace(openai: OpenAI, faceBase64: string, model: string): Promise<string> {
+  try {
+    const resp = await openai.chat.completions.create({
+      model,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image_url", image_url: { url: faceBase64, detail: "low" } },
+          {
+            type: "text",
+            text: "Describe this person's appearance for image generation: age range, gender, hairstyle, hair color, facial features, skin tone. 2 sentences max, no names.",
+          },
+        ],
+      }],
+      max_tokens: 120,
+    });
+    return resp.choices[0]?.message?.content?.trim() || "";
+  } catch {
+    // vision not supported by this model — return empty, fallback to generic person
+    return "";
+  }
 }
 
 export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { title, description, ratio, mode, includeSubject, thumbnailId } = body;
+  const { title, description, ratio, mode, includeSubject, faceBase64, vibe, thumbnailId } = body;
 
   const settings = await db.query.userSettings.findFirst({
     where: eq(userSettings.userId, session.user.id),
@@ -47,13 +63,36 @@ export async function POST(request: NextRequest) {
     baseURL: normaliseEndpoint(settings.aiEndpoint),
   });
 
+  const chatModel = settings.aiModel || "gpt-4o";
+
   try {
     if (mode === "image-gen") {
-      const subjectClause = includeSubject === false
-        ? "Do NOT include any people, persons, human figures, or faces. Focus on scenery, objects, graphics, or abstract elements only."
-        : "May include a expressive human subject if it fits the theme.";
+      // Build subject clause
+      let subjectClause: string;
 
-      const prompt = `Create a YouTube thumbnail for a video titled "${title}".${description ? ` About: ${description}.` : ""} Style: vibrant, eye-catching, professional. Aspect ratio: ${ratio}. ${subjectClause}`;
+      if (!includeSubject) {
+        subjectClause = "Do NOT include any people, persons, human figures, or faces. Focus on scenery, objects, graphics, or abstract elements only.";
+      } else {
+        let faceDesc = "";
+        if (faceBase64) {
+          faceDesc = await describeFace(openai, faceBase64, chatModel);
+        }
+
+        const vibeDesc = vibe ? `The overall mood and expression should be: ${vibe}.` : "";
+
+        subjectClause = faceDesc
+          ? `Include a person who looks exactly like this: ${faceDesc} ${vibeDesc}`
+          : `Include an expressive human subject. ${vibeDesc}`;
+      }
+
+      const prompt = [
+        `Create a vibrant, eye-catching YouTube thumbnail.`,
+        `Video title: "${title}".`,
+        description ? `Topic: ${description}.` : "",
+        `Aspect ratio: ${ratio}.`,
+        subjectClause,
+        "High quality, professional, dramatic lighting, bold composition.",
+      ].filter(Boolean).join(" ");
 
       const imageResp = await openai.images.generate({
         model: settings.imageModel || "dall-e-3",
@@ -63,40 +102,29 @@ export async function POST(request: NextRequest) {
       });
 
       const imageData = imageResp.data?.[0];
-
-      // Handle both url (default) and b64_json response formats
       let imageUrl: string | undefined;
-      if (imageData?.url) {
-        imageUrl = imageData.url;
-      } else if (imageData?.b64_json) {
-        imageUrl = `data:image/png;base64,${imageData.b64_json}`;
-      }
+      if (imageData?.url) imageUrl = imageData.url;
+      else if (imageData?.b64_json) imageUrl = `data:image/png;base64,${imageData.b64_json}`;
 
       if (!imageUrl) {
-        throw new Error(
-          "the model returned no image — check that your image model name is correct in settings"
-        );
+        throw new Error("the model returned no image — check your image model name in settings");
       }
 
-      await db
-        .update(thumbnail)
+      await db.update(thumbnail)
         .set({ imageUrl, prompt, status: "done" })
         .where(eq(thumbnail.id, thumbnailId));
 
       return NextResponse.json({ imageUrl, mode: "image-gen" });
+
     } else {
       const chatResp = await openai.chat.completions.create({
-        model: settings.aiModel || "gpt-4o",
+        model: chatModel,
         messages: [
           {
             role: "system",
-            content:
-              'You are a YouTube thumbnail copywriter. Given a video title and description, produce a punchy main caption (max 5 words, ALL CAPS) and a short subtext (max 8 words). Reply with ONLY a JSON object, no markdown. Format: {"caption":"...","subtext":"..."}',
+            content: 'You are a YouTube thumbnail copywriter. Given a video title and description, produce a punchy main caption (max 5 words, ALL CAPS) and a short subtext (max 8 words). Reply with ONLY a JSON object, no markdown. Format: {"caption":"...","subtext":"..."}',
           },
-          {
-            role: "user",
-            content: `Title: ${title}\nDescription: ${description}`,
-          },
+          { role: "user", content: `Title: ${title}\nDescription: ${description}` },
         ],
       });
 
@@ -105,27 +133,20 @@ export async function POST(request: NextRequest) {
       const aiCaption = parsed.caption || title.toUpperCase().slice(0, 40);
       const aiSubtext = parsed.subtext || description.slice(0, 60);
 
-      await db
-        .update(thumbnail)
+      await db.update(thumbnail)
         .set({ aiCaption, aiSubtext, status: "done" })
         .where(eq(thumbnail.id, thumbnailId));
 
       return NextResponse.json({ caption: aiCaption, subtext: aiSubtext, mode: "template" });
     }
+
   } catch (err: unknown) {
     let message = "generation failed";
     if (err instanceof Error) {
       const apiErr = err as Error & { status?: number };
-      message = apiErr.status
-        ? `api error ${apiErr.status}: ${err.message}`
-        : err.message;
+      message = apiErr.status ? `api error ${apiErr.status}: ${err.message}` : err.message;
     }
-
-    await db
-      .update(thumbnail)
-      .set({ status: "failed" })
-      .where(eq(thumbnail.id, thumbnailId));
-
+    await db.update(thumbnail).set({ status: "failed" }).where(eq(thumbnail.id, thumbnailId));
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
