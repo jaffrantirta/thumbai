@@ -119,7 +119,7 @@ export function ThumbnailCreator() {
                 className={cn(
                   "flex items-center gap-2.5 p-3.5 rounded-xl border transition-all text-left",
                   mode === m
-                    ? "border-indigo-500/60 bg-indigo-500/10 text-white"
+                    ? "border-violet-500/60 bg-violet-500/10 text-white"
                     : "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
                 )}
               >
@@ -162,7 +162,7 @@ export function ThumbnailCreator() {
                 className={cn(
                   "flex flex-col items-center py-2.5 px-2 rounded-lg border text-xs font-medium transition-all",
                   ratio === r.value
-                    ? "border-indigo-500/60 bg-indigo-500/10 text-white"
+                    ? "border-violet-500/60 bg-violet-500/10 text-white"
                     : "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700"
                 )}
               >
@@ -213,7 +213,7 @@ export function ThumbnailCreator() {
                   className={cn(
                     "flex flex-col items-center py-2.5 px-1 rounded-lg border text-xs font-medium transition-all",
                     template === t.id
-                      ? "border-indigo-500/60 bg-indigo-500/10 text-white"
+                      ? "border-violet-500/60 bg-violet-500/10 text-white"
                       : "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700"
                   )}
                 >
@@ -263,7 +263,7 @@ export function ThumbnailCreator() {
         </div>
 
         {loading && (
-          <p className="text-indigo-400 text-sm flex items-center gap-2">
+          <p className="text-violet-400 text-sm flex items-center gap-2">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             {mode === "image-gen" ? "generating image with ai..." : "ai is writing your copy..."}
           </p>

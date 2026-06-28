@@ -27,24 +27,20 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-white">thumbnails</h1>
-          <p className="text-zinc-500 text-sm mt-0.5">
-            {thumbnails.length} created
-          </p>
+          <h1 className="text-lg font-semibold text-white">thumbnails</h1>
+          <p className="text-zinc-500 text-sm mt-0.5">{thumbnails.length} created</p>
         </div>
         <Button asChild size="sm">
-          <Link href="/create">
-            <Plus className="w-4 h-4" /> new
-          </Link>
+          <Link href="/create"><Plus className="w-4 h-4" /> new</Link>
         </Button>
       </div>
 
       {loading ? (
         <div className="text-zinc-600 text-sm py-20 text-center">loading...</div>
       ) : thumbnails.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
             <Sparkles className="w-6 h-6 text-zinc-700" />
           </div>
@@ -55,7 +51,7 @@ export default function DashboardPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {thumbnails.map((t) => (
             <div
               key={t.id}
@@ -90,14 +86,10 @@ export default function DashboardPage() {
                   </Badge>
                   <Badge variant="outline">{t.ratio}</Badge>
                   {t.mode === "image-gen" && (
-                    <Badge variant="secondary">
-                      <ImageIcon className="w-3 h-3 mr-1" />ai image
-                    </Badge>
+                    <Badge variant="secondary"><ImageIcon className="w-3 h-3 mr-1" />ai image</Badge>
                   )}
                 </div>
-                <p className="text-xs text-zinc-600 mt-2">
-                  {new Date(t.createdAt).toLocaleDateString()}
-                </p>
+                <p className="text-xs text-zinc-600 mt-2">{new Date(t.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
           ))}

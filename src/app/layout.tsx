@@ -1,9 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ThumbAI — AI Thumbnail Generator",
-  description: "Generate stunning YouTube thumbnails with AI",
+  title: "thumbai — ai thumbnail generator",
+  description: "generate ai-powered thumbnails for your videos",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1, // prevents double-tap zoom on iOS
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

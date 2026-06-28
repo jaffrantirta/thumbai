@@ -51,7 +51,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-lg">
         {/* logo */}
         <div className="flex items-center gap-2 justify-center mb-10">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-white text-xl tracking-tight">thumbai</span>
@@ -66,9 +66,9 @@ export default function OnboardingPage() {
                   className={cn(
                     "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-all",
                     stepIndex > i + 1
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-violet-600 text-white"
                       : stepIndex === i + 1
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-violet-600 text-white"
                       : "bg-zinc-800 text-zinc-500"
                   )}
                 >
@@ -115,7 +115,7 @@ export default function OnboardingPage() {
         {step === "connect" && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-5">
             <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-indigo-400" />
+              <Key className="w-4 h-4 text-violet-400" />
               <h2 className="font-semibold text-white">connect your ai provider</h2>
             </div>
             <p className="text-sm text-zinc-400">
@@ -183,7 +183,7 @@ export default function OnboardingPage() {
         {step === "models" && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-5">
             <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-indigo-400" />
+              <Cpu className="w-4 h-4 text-violet-400" />
               <h2 className="font-semibold text-white">choose your models</h2>
             </div>
             <p className="text-sm text-zinc-400">
@@ -232,8 +232,8 @@ export default function OnboardingPage() {
         {/* done */}
         {step === "done" && (
           <div className="text-center space-y-6">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8 text-indigo-400" />
+            <div className="w-16 h-16 rounded-2xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-violet-400" />
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-white">you&apos;re all set</h2>

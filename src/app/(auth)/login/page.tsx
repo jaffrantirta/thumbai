@@ -20,16 +20,13 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     const result = await signIn.email({ email, password });
-
     if (result.error) {
       setError(result.error.message || "invalid email or password");
       setLoading(false);
     } else {
-      const onboardResp = await fetch("/api/onboarding");
-      const { onboardingCompleted } = await onboardResp.json();
-      router.push(onboardingCompleted ? "/dashboard" : "/onboarding");
+      // Dashboard layout server-checks onboarding and redirects if needed
+      router.push("/dashboard");
     }
   }
 
@@ -37,7 +34,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-white text-xl tracking-tight">thumbai</span>
@@ -57,9 +54,7 @@ export default function LoginPage() {
               <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
 
-            {error && (
-              <p className="text-red-400 text-sm">{error}</p>
-            )}
+            {error && <p className="text-red-400 text-sm">{error}</p>}
 
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> signing in...</> : "sign in"}
@@ -69,7 +64,7 @@ export default function LoginPage() {
 
         <p className="text-center text-zinc-500 text-sm mt-4">
           don&apos;t have an account?{" "}
-          <Link href="/register" className="text-indigo-400 hover:underline">sign up</Link>
+          <Link href="/register" className="text-violet-400 hover:underline">sign up</Link>
         </p>
       </div>
     </div>

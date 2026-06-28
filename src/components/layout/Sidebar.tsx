@@ -23,9 +23,9 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-56 shrink-0 flex flex-col h-screen bg-zinc-950 border-r border-zinc-900 py-6 px-3 fixed left-0 top-0">
+    <aside className="hidden lg:flex w-56 shrink-0 flex-col h-screen bg-zinc-950 border-r border-zinc-900 py-6 px-3 fixed left-0 top-0">
       <Link href="/dashboard" className="flex items-center gap-2 px-2 mb-8">
-        <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+        <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-white" />
         </div>
         <span className="font-semibold text-white text-base tracking-tight">thumbai</span>

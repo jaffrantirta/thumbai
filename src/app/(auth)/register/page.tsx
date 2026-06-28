@@ -30,7 +30,8 @@ export default function RegisterPage() {
       setError(result.error.message || "failed to create account");
       setLoading(false);
     } else {
-      router.push("/onboarding");
+      // Dashboard layout server-checks onboarding and redirects to /onboarding
+      router.push("/dashboard");
     }
   }
 
@@ -38,7 +39,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-white text-xl tracking-tight">thumbai</span>
@@ -62,9 +63,7 @@ export default function RegisterPage() {
               <Input id="password" type="password" placeholder="min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
 
-            {error && (
-              <p className="text-red-400 text-sm">{error}</p>
-            )}
+            {error && <p className="text-red-400 text-sm">{error}</p>}
 
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> creating account...</> : "create account"}
@@ -74,7 +73,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-zinc-500 text-sm mt-4">
           already have an account?{" "}
-          <Link href="/login" className="text-indigo-400 hover:underline">sign in</Link>
+          <Link href="/login" className="text-violet-400 hover:underline">sign in</Link>
         </p>
       </div>
     </div>
