@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Sparkles, ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { ThumbnailPreview, type TemplateId, type Ratio } from "@/components/thumbnail/ThumbnailPreview";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
   const [thumbnails, setThumbnails] = useState<Thumbnail[]>([]);
@@ -38,7 +39,23 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="text-zinc-600 text-sm py-20 text-center">loading...</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+              <div className="p-2.5 bg-zinc-950">
+                <Skeleton className="w-full aspect-video" />
+              </div>
+              <div className="px-4 py-3 space-y-2.5">
+                <Skeleton className="h-4 w-3/4" />
+                <div className="flex gap-1.5">
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                  <Skeleton className="h-5 w-10 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : thumbnails.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">

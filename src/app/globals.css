@@ -6,7 +6,7 @@
 }
 
 html {
-  font-size: 16px; /* prevents iOS Safari auto-zoom on inputs */
+  font-size: 16px;
 }
 
 body {
@@ -17,18 +17,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-/* iOS safe area for bottom nav */
 .pb-safe {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* shimmer sweep used for skeleton + generating animation */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* bouncing dots stagger */
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40%            { transform: translateY(-6px); opacity: 1; }
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-
 :focus { outline: none; }
