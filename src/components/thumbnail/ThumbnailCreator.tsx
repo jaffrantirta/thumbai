@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ThumbnailPreview, type TemplateId, type Ratio } from "./ThumbnailPreview";
-import { Sparkles, Download, Loader2, ImageIcon, LayoutTemplate } from "lucide-react";
+import { Sparkles, Download, Loader2, ImageIcon, LayoutTemplate, User, ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const RATIOS: { value: Ratio; label: string; desc: string }[] = [
@@ -46,6 +46,7 @@ export function ThumbnailCreator() {
   const [mode, setMode] = useState<Mode>("template");
 
   // image-gen state
+  const [includeSubject, setIncludeSubject] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [genError, setGenError] = useState("");
@@ -118,7 +119,7 @@ export function ThumbnailCreator() {
       const genResp = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, ratio, primaryColor, template, mode, thumbnailId: created.id }),
+        body: JSON.stringify({ title, description, ratio, primaryColor, template, mode, includeSubject, thumbnailId: created.id }),
       });
       const genData = await genResp.json();
       if (!genResp.ok) throw new Error(genData.error || "generation failed");
@@ -263,6 +264,36 @@ export function ThumbnailCreator() {
                 >
                   <span className="text-base mb-0.5">{t.emoji}</span>
                   <span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* subject toggle — image-gen only */}
+        {mode === "image-gen" && (
+          <div className="space-y-1.5">
+            <Label>subject in thumbnail</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: true,  icon: User,     label: "with person",  sub: "include a human subject" },
+                { value: false, icon: ImageOff, label: "no person",    sub: "scenery, objects, text only" },
+              ] as const).map(({ value, icon: Icon, label, sub }) => (
+                <button
+                  key={String(value)}
+                  onClick={() => setIncludeSubject(value)}
+                  className={cn(
+                    "flex items-center gap-2.5 p-3.5 rounded-xl border transition-all text-left",
+                    includeSubject === value
+                      ? "border-violet-500/60 bg-violet-500/10 text-white"
+                      : "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                  )}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <div>
+                    <div className="font-medium text-sm">{label}</div>
+                    <div className="text-xs opacity-50 mt-0.5">{sub}</div>
+                  </div>
                 </button>
               ))}
             </div>

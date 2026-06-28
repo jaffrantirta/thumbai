@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, description, ratio, mode, thumbnailId } = body;
+  const { title, description, ratio, mode, includeSubject, thumbnailId } = body;
 
   const settings = await db.query.userSettings.findFirst({
     where: eq(userSettings.userId, session.user.id),
@@ -49,7 +49,11 @@ export async function POST(request: NextRequest) {
 
   try {
     if (mode === "image-gen") {
-      const prompt = `Create a YouTube thumbnail for a video titled "${title}".${description ? ` About: ${description}.` : ""} Style: vibrant, eye-catching, professional. Aspect ratio: ${ratio}.`;
+      const subjectClause = includeSubject === false
+        ? "Do NOT include any people, persons, human figures, or faces. Focus on scenery, objects, graphics, or abstract elements only."
+        : "May include a expressive human subject if it fits the theme.";
+
+      const prompt = `Create a YouTube thumbnail for a video titled "${title}".${description ? ` About: ${description}.` : ""} Style: vibrant, eye-catching, professional. Aspect ratio: ${ratio}. ${subjectClause}`;
 
       const imageResp = await openai.images.generate({
         model: settings.imageModel || "dall-e-3",
