@@ -120,10 +120,11 @@ export function ThumbnailCreator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description, ratio, primaryColor, template, mode, thumbnailId: created.id }),
       });
-      if (!genResp.ok) throw new Error((await genResp.json()).error || "generation failed");
-      const result = await genResp.json();
+      const genData = await genResp.json();
+      if (!genResp.ok) throw new Error(genData.error || "generation failed");
+      if (!genData.imageUrl) throw new Error("no image returned — check your image model name in settings");
 
-      setImageUrl(result.imageUrl || "");
+      setImageUrl(genData.imageUrl);
       router.refresh();
     } catch (err: unknown) {
       setGenError(err instanceof Error ? err.message : "something went wrong");

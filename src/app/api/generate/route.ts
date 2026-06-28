@@ -8,24 +8,17 @@ import { headers } from "next/headers";
 
 function extractJson(text: string): { caption?: string; subtext?: string } {
   try {
-    // Try direct parse first
     return JSON.parse(text);
   } catch {
-    // Extract JSON object from fenced code block or raw text
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
-      try {
-        return JSON.parse(match[0]);
-      } catch {
-        // ignore
-      }
+      try { return JSON.parse(match[0]); } catch { /* ignore */ }
     }
   }
   return {};
 }
 
 function normaliseEndpoint(url: string): string {
-  // Remove trailing slash so SDK can append paths correctly
   return url.replace(/\/+$/, "");
 }
 
@@ -36,7 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, description, ratio, primaryColor, template, mode, thumbnailId } = body;
+  const { title, description, ratio, mode, thumbnailId } = body;
 
   const settings = await db.query.userSettings.findFirst({
     where: eq(userSettings.userId, session.user.id),
@@ -44,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   if (!settings?.aiKey || !settings?.aiEndpoint) {
     return NextResponse.json(
-      { error: "ai key not configured — go to settings to add your endpoint and key" },
+      { error: "ai key not configured — go to settings first" },
       { status: 400 }
     );
   }
@@ -56,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   try {
     if (mode === "image-gen") {
-      const prompt = `Create a YouTube thumbnail for a video titled "${title}".${description ? ` Video is about: ${description}.` : ""} Style: vibrant, eye-catching, professional. Primary color: ${primaryColor}. Aspect ratio: ${ratio}. No text overlay needed.`;
+      const prompt = `Create a YouTube thumbnail for a video titled "${title}".${description ? ` About: ${description}.` : ""} Style: vibrant, eye-catching, professional. Aspect ratio: ${ratio}.`;
 
       const imageResp = await openai.images.generate({
         model: settings.imageModel || "dall-e-3",
@@ -65,7 +58,21 @@ export async function POST(request: NextRequest) {
         size: ratio === "9:16" ? "1024x1792" : ratio === "1:1" ? "1024x1024" : "1792x1024",
       });
 
-      const imageUrl = imageResp.data?.[0]?.url;
+      const imageData = imageResp.data?.[0];
+
+      // Handle both url (default) and b64_json response formats
+      let imageUrl: string | undefined;
+      if (imageData?.url) {
+        imageUrl = imageData.url;
+      } else if (imageData?.b64_json) {
+        imageUrl = `data:image/png;base64,${imageData.b64_json}`;
+      }
+
+      if (!imageUrl) {
+        throw new Error(
+          "the model returned no image — check that your image model name is correct in settings"
+        );
+      }
 
       await db
         .update(thumbnail)
@@ -74,14 +81,13 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ imageUrl, mode: "image-gen" });
     } else {
-      // Template + AI mode — do NOT use response_format (not universally supported)
       const chatResp = await openai.chat.completions.create({
         model: settings.aiModel || "gpt-4o",
         messages: [
           {
             role: "system",
             content:
-              'You are a YouTube thumbnail copywriter. Given a video title and description, produce a punchy main caption (max 5 words, ALL CAPS) and a short subtext (max 8 words). Reply with ONLY a JSON object, no markdown, no explanation. Format: {"caption":"...","subtext":"..."}',
+              'You are a YouTube thumbnail copywriter. Given a video title and description, produce a punchy main caption (max 5 words, ALL CAPS) and a short subtext (max 8 words). Reply with ONLY a JSON object, no markdown. Format: {"caption":"...","subtext":"..."}',
           },
           {
             role: "user",
@@ -92,7 +98,6 @@ export async function POST(request: NextRequest) {
 
       const raw = chatResp.choices[0]?.message?.content || "{}";
       const parsed = extractJson(raw);
-
       const aiCaption = parsed.caption || title.toUpperCase().slice(0, 40);
       const aiSubtext = parsed.subtext || description.slice(0, 60);
 
@@ -106,13 +111,10 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     let message = "generation failed";
     if (err instanceof Error) {
-      // Surface the real status code if it's an OpenAI API error
-      const anyErr = err as Error & { status?: number; code?: string };
-      if (anyErr.status) {
-        message = `api error ${anyErr.status}: ${err.message}`;
-      } else {
-        message = err.message;
-      }
+      const apiErr = err as Error & { status?: number };
+      message = apiErr.status
+        ? `api error ${apiErr.status}: ${err.message}`
+        : err.message;
     }
 
     await db
