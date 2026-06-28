@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, description, ratio, primaryColor, template, mode } = body;
+  const { title, description, ratio, primaryColor, template, mode, status, aiCaption, aiSubtext } = body;
 
   const [created] = await db
     .insert(thumbnail)
@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
       primaryColor,
       template,
       mode,
-      status: "generating",
+      // template mode saves as done immediately; image-gen starts as generating
+      status: status || "generating",
+      aiCaption: aiCaption || null,
+      aiSubtext: aiSubtext || null,
     })
     .returning();
 

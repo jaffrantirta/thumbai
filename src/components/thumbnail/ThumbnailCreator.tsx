@@ -19,7 +19,7 @@ const RATIOS: { value: Ratio; label: string; desc: string }[] = [
 ];
 
 const COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
+  "#7c3aed", "#6366f1", "#ec4899", "#ef4444",
   "#f97316", "#eab308", "#22c55e", "#06b6d4",
   "#3b82f6", "#ffffff", "#18181b", "#64748b",
 ];
@@ -41,22 +41,70 @@ export function ThumbnailCreator() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [ratio, setRatio] = useState<Ratio>("16:9");
-  const [primaryColor, setPrimaryColor] = useState("#6366f1");
+  const [primaryColor, setPrimaryColor] = useState("#7c3aed");
   const [template, setTemplate] = useState<TemplateId>("modern");
   const [mode, setMode] = useState<Mode>("template");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const [caption, setCaption] = useState("");
-  const [subtext, setSubtext] = useState("");
+  // image-gen state
+  const [generating, setGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
-  const [generated, setGenerated] = useState(false);
+  const [genError, setGenError] = useState("");
 
-  async function handleGenerate() {
-    if (!title.trim()) { setError("title is required"); return; }
-    setError("");
-    setLoading(true);
-    setGenerated(false);
+  // save state (template mode)
+  const [saving, setSaving] = useState(false);
+
+  const canDownload = mode === "template" ? !!title.trim() : !!imageUrl;
+
+  async function handleDownload() {
+    if (!title.trim()) return;
+
+    if (mode === "template") {
+      // Save to DB then export PNG from DOM — no AI needed
+      setSaving(true);
+      try {
+        await fetch("/api/thumbnails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            description,
+            ratio,
+            primaryColor,
+            template,
+            mode,
+            status: "done",
+            aiCaption: title,
+            aiSubtext: description,
+          }),
+        });
+        router.refresh();
+      } catch {
+        // non-blocking — still download even if save fails
+      } finally {
+        setSaving(false);
+      }
+
+      if (!previewRef.current) return;
+      const dataUrl = await toPng(previewRef.current, { quality: 1, pixelRatio: 2 });
+      const link = document.createElement("a");
+      link.download = `thumbnail-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } else {
+      // image-gen mode: download the AI image URL
+      const link = document.createElement("a");
+      link.download = `thumbnail-${Date.now()}.png`;
+      link.href = imageUrl;
+      link.target = "_blank";
+      link.click();
+    }
+  }
+
+  async function handleAiGenerate() {
+    if (!title.trim()) { setGenError("title is required"); return; }
+    setGenError("");
+    setGenerating(true);
+    setImageUrl("");
 
     try {
       const createResp = await fetch("/api/thumbnails", {
@@ -64,7 +112,7 @@ export function ThumbnailCreator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description, ratio, primaryColor, template, mode }),
       });
-      if (!createResp.ok) throw new Error((await createResp.json()).error || "failed to create");
+      if (!createResp.ok) throw new Error((await createResp.json()).error || "failed");
       const created = await createResp.json();
 
       const genResp = await fetch("/api/generate", {
@@ -75,32 +123,12 @@ export function ThumbnailCreator() {
       if (!genResp.ok) throw new Error((await genResp.json()).error || "generation failed");
       const result = await genResp.json();
 
-      if (mode === "template") {
-        setCaption(result.caption || "");
-        setSubtext(result.subtext || "");
-      } else {
-        setImageUrl(result.imageUrl || "");
-      }
-
-      setGenerated(true);
+      setImageUrl(result.imageUrl || "");
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "something went wrong");
+      setGenError(err instanceof Error ? err.message : "something went wrong");
     } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDownload() {
-    if (!previewRef.current) return;
-    try {
-      const dataUrl = await toPng(previewRef.current, { quality: 1, pixelRatio: 2 });
-      const link = document.createElement("a");
-      link.download = `thumbnail-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch {
-      setError("download failed");
+      setGenerating(false);
     }
   }
 
@@ -110,12 +138,12 @@ export function ThumbnailCreator() {
       <div className="space-y-5">
         {/* mode */}
         <div>
-          <Label className="mb-2 block">generation mode</Label>
+          <Label className="mb-2 block">mode</Label>
           <div className="grid grid-cols-2 gap-2">
             {(["template", "image-gen"] as Mode[]).map((m) => (
               <button
                 key={m}
-                onClick={() => setMode(m)}
+                onClick={() => { setMode(m); setImageUrl(""); setGenError(""); }}
                 className={cn(
                   "flex items-center gap-2.5 p-3.5 rounded-xl border transition-all text-left",
                   mode === m
@@ -123,10 +151,16 @@ export function ThumbnailCreator() {
                     : "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
                 )}
               >
-                {m === "template" ? <LayoutTemplate className="w-4 h-4 shrink-0" /> : <ImageIcon className="w-4 h-4 shrink-0" />}
+                {m === "template"
+                  ? <LayoutTemplate className="w-4 h-4 shrink-0" />
+                  : <ImageIcon className="w-4 h-4 shrink-0" />}
                 <div>
-                  <div className="font-medium text-sm">{m === "template" ? "template + ai" : "ai image gen"}</div>
-                  <div className="text-xs opacity-50 mt-0.5">{m === "template" ? "styled + ai copy" : "full ai image"}</div>
+                  <div className="font-medium text-sm">
+                    {m === "template" ? "design" : "ai generate"}
+                  </div>
+                  <div className="text-xs opacity-50 mt-0.5">
+                    {m === "template" ? "instant, no api call" : "uses your ai key"}
+                  </div>
                 </div>
               </button>
             ))}
@@ -136,15 +170,26 @@ export function ThumbnailCreator() {
         {/* title */}
         <div className="space-y-1.5">
           <Label htmlFor="title">video title</Label>
-          <Input id="title" placeholder="e.g. 10 things i wish i knew before..." value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input
+            id="title"
+            placeholder="e.g. 10 things i wish i knew before..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </div>
 
         {/* description */}
         <div className="space-y-1.5">
-          <Label htmlFor="description">short description</Label>
+          <Label htmlFor="description">
+            {mode === "template" ? "subtitle / tagline" : "description (helps ai)"}
+          </Label>
           <Textarea
             id="description"
-            placeholder="what is this video about? helps ai generate better content"
+            placeholder={
+              mode === "template"
+                ? "a short line shown below the title"
+                : "what is this video about?"
+            }
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -184,9 +229,7 @@ export function ThumbnailCreator() {
                 title={c}
                 className={cn(
                   "w-7 h-7 rounded-lg border-2 transition-all hover:scale-110",
-                  primaryColor === c
-                    ? "border-white scale-110"
-                    : "border-transparent hover:border-zinc-600"
+                  primaryColor === c ? "border-white scale-110" : "border-transparent hover:border-zinc-600"
                 )}
                 style={{ background: c }}
               />
@@ -201,7 +244,7 @@ export function ThumbnailCreator() {
           </div>
         </div>
 
-        {/* template */}
+        {/* template picker — only for design mode */}
         {mode === "template" && (
           <div className="space-y-1.5">
             <Label>template</Label>
@@ -225,25 +268,46 @@ export function ThumbnailCreator() {
           </div>
         )}
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-
-        <Button onClick={handleGenerate} disabled={loading} className="w-full">
-          {loading ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> generating...</>
-          ) : (
-            <><Sparkles className="w-4 h-4" /> generate thumbnail</>
-          )}
-        </Button>
+        {/* actions */}
+        {mode === "template" ? (
+          <Button
+            onClick={handleDownload}
+            disabled={!title.trim() || saving}
+            className="w-full"
+          >
+            {saving
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> saving...</>
+              : <><Download className="w-4 h-4" /> save & download</>}
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            <Button
+              onClick={handleAiGenerate}
+              disabled={generating}
+              className="w-full"
+            >
+              {generating
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> generating...</>
+                : <><Sparkles className="w-4 h-4" /> generate with ai</>}
+            </Button>
+            {genError && <p className="text-red-400 text-sm">{genError}</p>}
+            {imageUrl && (
+              <Button variant="outline" onClick={handleDownload} className="w-full">
+                <Download className="w-4 h-4" /> download image
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right: preview */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label>preview</Label>
-          {generated && (
-            <Button size="sm" variant="outline" onClick={handleDownload}>
-              <Download className="w-3.5 h-3.5" /> download png
-            </Button>
+          <Label>
+            {mode === "template" ? "live preview" : "ai result"}
+          </Label>
+          {mode === "template" && (
+            <span className="text-xs text-zinc-600">updates as you type</span>
           )}
         </div>
 
@@ -254,25 +318,21 @@ export function ThumbnailCreator() {
             primaryColor={primaryColor}
             template={template}
             ratio={ratio}
-            caption={caption}
-            subtext={subtext}
             imageUrl={imageUrl}
             mode={mode}
             previewRef={previewRef}
           />
         </div>
 
-        {loading && (
-          <p className="text-violet-400 text-sm flex items-center gap-2">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            {mode === "image-gen" ? "generating image with ai..." : "ai is writing your copy..."}
+        {mode === "template" && (
+          <p className="text-xs text-zinc-600">
+            what you see is exactly what you get — no ai call needed
           </p>
         )}
 
-        {generated && (
-          <p className="text-emerald-400 text-sm flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            thumbnail generated — click download to save
+        {mode === "image-gen" && generating && (
+          <p className="text-violet-400 text-sm flex items-center gap-2">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> ai is generating your image...
           </p>
         )}
       </div>
